@@ -5,6 +5,7 @@
     resultComunicate: 		.asciiz      	"Wynik: "
     wrongDecisionComunicate: 	.asciiz      	"\nWybrano niewlasciwa liczbe!"
     divByZeroComunicate:	.asciiz	     	"Nie mozna dzielic przez zero"
+    tooLittleArgComunicate:	.asciiz		"Podano niewlasciwa liczbe parametrow"
 .text
 .globl _main
 
@@ -41,7 +42,14 @@ _inputNumbers:
     jal _readNumber
     move $s1, $v0
   
+    jal _checkIsMoreThanOne
     j _writeNumbersToStack            
+
+ #Uzywa $s1, alokuje rejestr $t0
+_checkIsMoreThanOne:
+     li $t0, 2
+     blt $s1, $t0, _invalidParameter
+     jr $ra
 
 _readNumber:
     li $v0, 5     	
@@ -73,14 +81,19 @@ _chooseDecision:
     j _wrongDecision        
        
 _wrongDecision:
-     li $v0,4
-     la $a0,wrongDecisionComunicate
-     syscall
+     
+     showComunicate(wrongDecisionComunicate)
+     #li $v0,4
+     #la $a0,wrongDecisionComunicate
+     #syscall
      j _endProcess
 
 #__________ zwolnione rejestry $t1-$t7 __________
 
 _addProcess:
+
+     jal _checkIsMoreThanOne
+
      li $s2,0 #wynik
      li $t2,0 #iterator
  	
@@ -93,7 +106,11 @@ _addProcess:
      showComunicate(resultComunicate)
      jal _showResult
 j _endProcess
-             	        	          	           	        	      
+ 	             	        	          	           	        	      
+_invalidParameter:
+    showComunicate(tooLittleArgComunicate)
+    j _endProcess 
+             	        	          	           	        	                  	        	          	           	        	                  	        	          	           	        	                   	        	          	           	        	                  	        	          	           	        	                  	        	          	           	        	      
 #Wczytuje liczbe ze stosu do $t1
 _readNumberFromStack:
      lw $t1, ($sp)
