@@ -94,15 +94,17 @@ _addProcess:
 
      jal _checkIsMoreThanOne
 
-     li $s2,0 #wynik
+     li $t3,0 #wynik
      li $t2,0 #iterator
  	
      addWhile:
  	jal _readNumberFromStack
- 	add $s2,$s2,$t1
+ 	add $t3,$t3,$t1
  	add $t2, $t2,1
  	blt $t2,$s1,addWhile
- 	
+
+     add $sp, $sp, -4
+     sw $t3, ($sp) 	 	
      showComunicate(resultComunicate)
      jal _showResult
 j _endProcess
@@ -120,10 +122,14 @@ _readNumberFromStack:
 #Uzywa $s2       
 _showResult:    
     li $v0, 1      	
-    la $a0, ($s2) 
+    lw $a0, ($sp) 
+    add $sp,$sp,4
     syscall         	
     jr $ra
-    	 		        	        	         	        	           	        	        
+
+_subtractProcess:
+     	 		        	        	         	        	           	        	        
+    	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	        
 _endProcess:
     li $v0,10
     syscall  
