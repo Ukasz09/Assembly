@@ -73,7 +73,7 @@ _writeNumbersToStack:
 #Uzywa $t1 - wybor z menu, oraz $t2-$t7        
 _chooseDecision:
      beq $t1, $t2, _addProcess    
-    #beq $t1, $t3, _subtractProcess 
+     beq $t1, $t3, _subtractProcess 
     #beq $t1, $t4, _multiplyProcess
     #beq $t1, $t5, _divideProcess 
     #beq $t1, $t6, _powerProcess
@@ -81,24 +81,17 @@ _chooseDecision:
     j _wrongDecision        
        
 _wrongDecision:
-     
      showComunicate(wrongDecisionComunicate)
-     #li $v0,4
-     #la $a0,wrongDecisionComunicate
-     #syscall
      j _endProcess
 
-#__________ zwolnione rejestry $t1-$t7 __________
-
 _addProcess:
-
      jal _checkIsMoreThanOne
 
      li $t3,0 #wynik
      li $t2,0 #iterator
  	
      addWhile:
- 	jal _readNumberFromStack
+ 	jal _readNumberStackUp
  	add $t3,$t3,$t1
  	add $t2, $t2,1
  	blt $t2,$s1,addWhile
@@ -107,14 +100,14 @@ _addProcess:
      sw $t3, ($sp) 	 	
      showComunicate(resultComunicate)
      jal _showResult
-j _endProcess
+     j _endProcess
  	             	        	          	           	        	      
 _invalidParameter:
     showComunicate(tooLittleArgComunicate)
     j _endProcess 
              	        	          	           	        	                  	        	          	           	        	                  	        	          	           	        	                   	        	          	           	        	                  	        	          	           	        	                  	        	          	           	        	      
-#Wczytuje liczbe ze stosu do $t1
-_readNumberFromStack:
+#Wczytuje liczbe ze stosu do $t1 i cofa wskaznik (idzie w gore odwroconego stosu)
+_readNumberStackUp:
      lw $t1, ($sp)
      add $sp,$sp,4
      jr $ra     
@@ -127,9 +120,43 @@ _showResult:
     syscall         	
     jr $ra
 
+
 _subtractProcess:
-     	 		        	        	         	        	           	        	        
-    	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	        
+     jal _checkIsMoreThanOne
+     jal _setPointerToFirstAddedNumber
+     
+     li $t3,0 #wynik
+     
+     jal _readNumberStackDown
+     add $t3,$t3,$t1
+     li $t2,1 #iterator
+ 	
+     subWhile:
+        jal _readNumberStackDown
+        sub $t3, $t3,$t1 
+ 	add $t2, $t2,1
+ 	blt $t2,$s1,subWhile
+
+     jal _setPointerToFirstAddedNumber
+     add $sp, $sp, 4
+     sw $t3, ($sp) 	 	
+     showComunicate(resultComunicate)
+     jal _showResult
+     j _endProcess 	 		        	        	         	        	           	        	        
+
+#Alokuje $t4, uzywa $s1, zmienia wskaznik stosu
+_setPointerToFirstAddedNumber:
+    mul $t4, $s1, 4
+    sub $t4, $t4, 4
+    add $sp, $sp, $t4	
+    jr $ra
+
+#Wczytuje liczbe ze stosu do $t1 i przesowa do przodu wskaznik (idzie w dol odwroconego stosu)
+_readNumberStackDown:
+     lw $t1, ($sp)
+     add $sp,$sp,-4
+     jr $ra      	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	        
+    	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	        
 _endProcess:
     li $v0,10
     syscall  
