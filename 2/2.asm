@@ -1,7 +1,7 @@
 .data    
     howManyNumbersComunicate:	.asciiz		"Podaj ilosc liczb: "
     inputNumberComunicate:	.asciiz      	"Podaj liczbe: "
-    menuComunicate:       	.asciiz      	"\nWybierz z menu: \n1 => Dodawanie, \n2 => Odejmowanie \n3 => Mnozenie: \n4 => Dzielenie \n5 => Potegowanie \n6 => Pierwiastkowanie\n\nDecyzja: "
+    menuComunicate:       	.asciiz      	"\nWybierz z menu: \n1 => Dodawanie, \n2 => Odejmowanie \n3 => Mnozenie: \n4 => Dzielenie calkowite \n5 => Potegowanie \n\nDecyzja: "
     resultComunicate: 		.asciiz      	"Wynik: "
     wrongDecisionComunicate: 	.asciiz      	"\nWybrano niewlasciwa liczbe!"
     divByZeroComunicate:	.asciiz	     	"Nie mozna dzielic przez zero"
@@ -23,7 +23,6 @@ _main:
     li $t4, 3
     li $t5, 4 
     li $t6, 5
-    li $t7, 6
 
     #t2 - wybor z menu	
     showComunicate(menuComunicate)
@@ -32,7 +31,7 @@ _main:
     
     #jesli wczytujemy dowolna ilosc liczb na stos
     ble $t1, $t4, _inputNumbers      
-    bgt $t1, $t7, _wrongDecision
+    bgt $t1, $t6, _wrongDecision
     
     	#jesli wczytujemy dwie liczby                                                
     	li $s1,2
@@ -185,7 +184,7 @@ _multiplyProcess:
      
      beqz $t2, divByZero 
      div $t3,$t1,$t2
- 
+
      add $sp, $sp, -4
      sw $t3, ($sp) 	 	
      showComunicate(resultComunicate)
