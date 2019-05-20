@@ -85,7 +85,7 @@ _wrongDecision:
      j _endProcess
 
 _addProcess:
-     jal _checkIsMoreThanOne
+     #jal _checkIsMoreThanOne
 
      li $t3,0 #wynik
      li $t2,0 #iterator
@@ -122,7 +122,7 @@ _showResult:
 
 
 _subtractProcess:
-     jal _checkIsMoreThanOne
+     #jal _checkIsMoreThanOne
      jal _setPointerToFirstAddedNumber
      
      li $t3,0 #wynik
@@ -158,7 +158,7 @@ _readNumberStackDown:
      jr $ra      	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	            	 		        	        	         	        	           	        	        
 
 _multiplyProcess:
-     jal _checkIsMoreThanOne
+     #jal _checkIsMoreThanOne
 
      li $t3,0 #wynik
      jal _readNumberStackUp
