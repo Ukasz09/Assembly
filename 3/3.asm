@@ -32,8 +32,7 @@ _main:
     	jal _readNumberInt
     	move $s0, $v0  
     
-    	li $t0, 0
-    	ble $s0, $t0, _negValueError   
+    	ble $s0, 0, _negValueError   
     
     #wspolczynniki wczytywane na stos
     inputCoefficinets:            
