@@ -17,6 +17,7 @@
     noOneMatrixMsg:		.asciiz "\nNie ma zadnych zapisanych macierzy"
     notEnoughMatrixMsg:		.asciiz "\nNie mozna wykonac operacji. Potrzeba minimum 2 maicerzy"
     incorectSizeMatrixMsg: 	.asciiz "\nNie mozna wykonac. Macierze maja rozne rozmiary"
+    maxNumberOfMatrixMsg:	.asciiz "\nNie mozna dodac przekroczona ilosc macierzy do dodania"
 .text
 .globl _main
 
@@ -53,8 +54,8 @@ _main:
 		beq $v0, $t4, _scalingMatrix
 		j _wrongDecision
 		
-endMain:
 #################################################################################################################
+
 _readMatrixesFromStack:
 	bnez $s0, atLeastOneMatrix
 	
@@ -168,16 +169,20 @@ _readMatrix:
 	jr $ra
 
  _writeMatrixesToStack:
+ 	bge $s0, 10, maxNumberOfMatrix	#kontrola ilosci macierzy 
+ 
  	print(howManyMatrixMsg)
 	jal _readIntNumber
-	move $t0,$v0	#t0 - ilosc macierzy do wczytania	
+	move $t0,$v0			#t0 - ilosc macierzy do wczytania	
 	
-	#kontrola ujemnych wartosci
-	bltz $t0, _wrongDecision	
-	#kontrola zerowych wartosci
-	beqz $t0, _closeProgramDecision
 	
-	li $t1, 0 #t1 -iterator
+	bltz $t0, _wrongDecision		#kontrola ujemnych wartosci	
+	beqz $t0, _closeProgramDecision		#kontrola zerowych wartosci
+	
+	add $t1, $t0, $s0			#kontrola ilosci macierzy
+	bgt $t1, 10, maxNumberOfMatrix
+	
+	li $t1, 0 			#t1 -iterator
 	for_main:
 		print(numberOfMatrixMsg)
 		la $a0, ($s0)
@@ -187,6 +192,10 @@ _readMatrix:
 	  	jal _writeMatrix	
        		add $t1, $t1, 1
 		blt $t1, $t0, for_main
+	j _closeProgramDecision
+	
+	maxNumberOfMatrix:
+		print(maxNumberOfMatrixMsg)
 	j _closeProgramDecision
 	
 _writeMatrix:
@@ -451,7 +460,8 @@ _subMatrixes:
 												
 	j _closeProgramDecision	
 	
-##################################################################################						
+##################################################################################
+						
  #Wczytana liczba do f0
  _readFloatNumber:
     li $v0, 6     	
