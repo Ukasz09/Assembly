@@ -1,20 +1,22 @@
 .data    
-    opertaionChooseMsg: .asciiz "\n\nPodaj wybrana operacje: "
-    menuMsg:		.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy"
-    howManyMatrixMsg:	.asciiz "\nPodaj ilosc macierzy do dodania: "
-    wrongDecisionMsg:	.asciiz "\nPodano bledne dane"
-    closeDecisionMsg:	.asciiz "\nCzy chcesz zakonczyc program (0-nie): "
-    howManyRowMsg:	.asciiz "\nPodaj ilosc wierszy: "
-    howManyColumnsMsg:	.asciiz "Podaj ilosc kolumn: "
-    readNumberMsg:	.asciiz "Podaj liczbe: "
-    numberOfRowsMsg: 	.asciiz "\nWiersz nr. "
-    numberOfMatrixMsg:	.asciiz "\nMacierz nr. "
-    newLineMsg:		.asciiz "\n"
-    leftBracketMsg:	.asciiz "["
-    rightBracketMsg:	.asciiz "]"
-    matrixChooseMsg:	.asciiz "Podaj numer macierzy: "
-    scalarMsg:		.asciiz "Podaj skalar: "
-    noOneMatrixMsg:	.asciiz "\nNie ma zadnych zapisanych macierzy"
+    opertaionChooseMsg: 	.asciiz "\n\nPodaj wybrana operacje: "
+    menuMsg:			.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy"
+    howManyMatrixMsg:		.asciiz "\nPodaj ilosc macierzy do dodania: "
+    wrongDecisionMsg:		.asciiz "\nPodano bledne dane"
+    closeDecisionMsg:		.asciiz "\nCzy chcesz zakonczyc program (0-nie): "
+    howManyRowMsg:		.asciiz "\nPodaj ilosc wierszy: "
+    howManyColumnsMsg:		.asciiz "Podaj ilosc kolumn: "
+    readNumberMsg:		.asciiz "Podaj liczbe: "
+    numberOfRowsMsg: 		.asciiz "\nWiersz nr. "
+    numberOfMatrixMsg:		.asciiz "\nMacierz nr. "
+    newLineMsg:			.asciiz "\n"
+    leftBracketMsg:		.asciiz "["
+    rightBracketMsg:		.asciiz "]"
+    matrixChooseMsg:		.asciiz "Podaj numer macierzy: "
+    scalarMsg:			.asciiz "Podaj skalar: "
+    noOneMatrixMsg:		.asciiz "\nNie ma zadnych zapisanych macierzy"
+    notEnoughMatrixMsg:		.asciiz "\nNie mozna wykonac operacji. Potrzeba minimum 2 maicerzy"
+    incorectSizeMatrixMsg: 	.asciiz "\nNie mozna wykonac. Macierze maja rozne rozmiary"
 .text
 .globl _main
 
@@ -301,33 +303,47 @@ _mulByScalar:
 	la $ra, ($t6)
 	jr $ra
 
-_addMatrixes:
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $s1, $v0		#$s1 - numer macierzy 1
-	
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $s2, $v0		#s2 - numer macierzy 2
-	
-	move $t0,$s1
-	jal _moveStackPointerUp
-	lw $s5, ($sp)		#s5 - ilosc kolumn
-	lw $s6, 4($sp)		#s6 - ilosc wierszy
+_addMatrixes:	
+	blt $s0,2,notEnoughMatrix			#kontrola wymaganej ilosc matrixow
 
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s1, $v0					#$s1 - numer macierzy 1
+	
+		bltz $s1, incorectNumberOfMatrix	#kontrola ujemnych
+		bge $s1, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+	
+		move $t0,$s1				#TMP do kontroli wielkosci macierzy
+		jal _moveStackPointerUp
+		lw $s3, ($sp)					
+		lw $s4, 4($sp)						
+		jal _moveStackPointerDown	
+																																																																																			
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s2, $v0					#s2 - numer macierzy 2
+	
+		bltz $s2, incorectNumberOfMatrix	#kontrola ujemnych
+		bge $s2, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+	
+	move $t0,$s2
+	jal _moveStackPointerUp
+	lw $s5, ($sp)					#s5 - ilosc kolumn
+	lw $s6, 4($sp)					#s6 - ilosc wierszy
 	jal _moveStackPointerDown
 	
-	li $s3, 0		#s3 - iterator wierszy, s4 - iterator kolumn, 
+		bne $s3, $s5, incorectSize		#kontrola wielkosci macierzy
+		bne $s4, $s6, incorectSize		#kontrola wielkosci macierzy
+	
+	li $s3, 0					#s3 - iterator wierszy, s4 - iterator kolumn, 
 	li $s4, 0
 	mul $t8, $s5, $s6
 	mul $t8, $t8, 4
-	add $t8, $t8, 4		#t8 -tmp 	
+	add $t8, $t8, 4					#t8 -tmp 	
 	for_addRows:
 		println()
 		li $s4, 0
 		for_addColumns:	
-			#mtc1 $s1, $f1	#mtc1
-			#mtc1 $s2, $f2	#mtc1
 			move $t0, $s1
 			jal _moveStackPointerUp
 			add $sp, $sp, $t8
@@ -356,27 +372,43 @@ _addMatrixes:
 												
 	j _closeProgramDecision
 	
+	notEnoughMatrix:
+		print(notEnoughMatrixMsg)
+	j _closeProgramDecision
+	
+	incorectSize:
+		print(incorectSizeMatrixMsg)
+	j _closeProgramDecision	
+	
 _subMatrixes:
+	blt $s0,2,notEnoughMatrix			#kontrola wymaganej ilosc matrixow
+
 	print(matrixChooseMsg)
 	jal _readIntNumber
-	move $s1, $v0		#$s1 - numer macierzy 1
+	move $s1, $v0					#$s1 - numer macierzy 1
+	
+		bltz $s1, incorectNumberOfMatrix	#kontrola ujemnych
+		bge $s1, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
 	
 	print(matrixChooseMsg)
 	jal _readIntNumber
-	move $s2, $v0		#s2 - numer macierzy 2
+	move $s2, $v0					#s2 - numer macierzy 2
+	
+		bltz $s2, incorectNumberOfMatrix	#kontrola ujemnych
+		bge $s2, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
 	
 	move $t0,$s1
 	jal _moveStackPointerUp
-	lw $s5, ($sp)		#s5 - ilosc kolumn
-	lw $s6, 4($sp)		#s6 - ilosc wierszy
+	lw $s5, ($sp)					#s5 - ilosc kolumn
+	lw $s6, 4($sp)					#s6 - ilosc wierszy
 
 	jal _moveStackPointerDown
 	
-	li $s3, 0		#s3 - iterator wierszy, s4 - iterator kolumn, 
+	li $s3, 0					#s3 - iterator wierszy, s4 - iterator kolumn, 
 	li $s4, 0
 	mul $t8, $s5, $s6
 	mul $t8, $t8, 4
-	add $t8, $t8, 4		#t8 -tmp 	
+	add $t8, $t8, 4					#t8 -tmp 	
 	for_subRows:
 		println()
 		li $s4, 0
@@ -410,6 +442,7 @@ _subMatrixes:
 		blt $s3,$s6,for_subRows
 												
 	j _closeProgramDecision	
+	
 ##################################################################################						
  #Wczytana liczba do f0
  _readFloatNumber:
