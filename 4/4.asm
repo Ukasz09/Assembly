@@ -1,9 +1,9 @@
 .data    
     opertaionChooseMsg: .asciiz "\n\nPodaj wybrana operacje: "
-    menuMsg:		.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy, \n6) Transpozycja macierzy, \n7) Mnozenie macierzy, \n8) Oblicznaie wyznacznika macierzy"
+    menuMsg:		.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy"
     howManyMatrixMsg:	.asciiz "\nPodaj ilosc macierzy do dodania: "
-    wrongDecisionMsg:	.asciiz "\nWybrano niewlasciwa operacje"
-    closeDecisionMsg:	.asciiz "\nCzy chcesz zakonczyc program (1-tak, 0-nie): "
+    wrongDecisionMsg:	.asciiz "\nPodano bledne dane"
+    closeDecisionMsg:	.asciiz "\nCzy chcesz zakonczyc program (0-nie): "
     howManyRowMsg:	.asciiz "\nPodaj ilosc wierszy: "
     howManyColumnsMsg:	.asciiz "Podaj ilosc kolumn: "
     readNumberMsg:	.asciiz "Podaj liczbe: "
@@ -14,6 +14,7 @@
     rightBracketMsg:	.asciiz "]"
     matrixChooseMsg:	.asciiz "Podaj numer macierzy: "
     scalarMsg:		.asciiz "Podaj skalar: "
+    noOneMatrixMsg:	.asciiz "\nNie ma zadnych zapisanych macierzy"
 .text
 .globl _main
 
@@ -33,45 +34,62 @@ _main:
 	li $s0, 0 #ilsc wprowadzonych macierzy
 	
    	_mainToRepete:
+		li $t0, 1
+		li $t1, 2
+		li $t2, 3
+		li $t3, 4
+		li $t4, 5
 	
-	li $t0, 1
-	li $t1, 2
-	li $t2, 3
-	li $t3, 4
-	li $t4, 5
-	li $t5, 6
-	li $t6, 7
-	li $t7, 8
+		print(menuMsg)
+		print(opertaionChooseMsg)
+		jal _readIntNumber
 	
-	print(menuMsg)
-	print(opertaionChooseMsg)
-	jal _readIntNumber
+		beq $v0, $t0, _writeMatrixesToStack
+		beq $v0, $t1, _readMatrixesFromStack
+		beq $v0, $t2, _addMatrixes
+		beq $v0, $t3, _subMatrixes
+		beq $v0, $t4, _scalingMatrix
+		j _wrongDecision
+		
+endMain:
+#################################################################################################################
+_readMatrixesFromStack:
+
+	bnez $s0, atLeastOneMatrix
 	
-	beq $v0, $t0, _writeMatrixesToStack
-	beq $v0, $t1, _readMatrixesFromStack
-	beq $v0, $t2, _addMatrixes
-	#beq $v0, $t3, _subMatrixes
-	beq $v0, $t4, _scalingMatrix
-	#beq $v0, $t5, _transpositionMatrix
-	#beq $v0, $t6, _mulMatrix
-	#beq $v0, $t7, _determinantMatrix
+	noOneMatrix:
+		print(noOneMatrixMsg)
+	j _closeProgramDecision
+
+	atLeastOneMatrix:
+		bne $s0, 1, moreMatrix
 	
-	wrongDecision:
-		print(wrongDecisionMsg)
+		oneMatrix:
+			li $t0, 0
+			jal _moveStackPointerUp
+			jal _readMatrix
+			jal _moveStackPointerDown
+			
 		j _closeProgramDecision
 	
-endMain:
-#################################################################################################################33
-_readMatrixesFromStack:
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $t0, $v0		#$t0 - numer macierzy
+		moreMatrix:
+			print(matrixChooseMsg)
+			jal _readIntNumber
+			move $t0, $v0				#$t0 - numer macierzy
+		
+			bltz $t0, incorectNumberOfMatrix	#kontrola ujemnych
+			bge $t0, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
 	
-	jal _moveStackPointerUp
-	jal _readMatrix
-	jal _moveStackPointerDown
+			jal _moveStackPointerUp
+			jal _readMatrix
+			jal _moveStackPointerDown
 
+		j _closeProgramDecision
+		
+	incorectNumberOfMatrix:	
+		print(wrongDecisionMsg)
 	j _closeProgramDecision
+	
 #Uzywa t0
 _moveStackPointerUp:
 	li $t7, 0 		#t7 - ilosc bitow do ominiecia
@@ -153,11 +171,15 @@ _readMatrix:
 	jal _readIntNumber
 	move $t0,$v0	#t0 - ilosc macierzy do wczytania	
 	
+	#kontrola ujemnych wartosci
+	bltz $t0, _wrongDecision	
+	#kontrola zerowych wartosci
+	beqz $t0, _closeProgramDecision
+	
 	li $t1, 0 #t1 -iterator
 	for_main:
 		print(numberOfMatrixMsg)
 		la $a0, ($s0)
-		add $s0, $s0, 1
 		jal _printIntNumber
 		println()
 		
@@ -167,19 +189,20 @@ _readMatrix:
 	j _closeProgramDecision
 	
 _writeMatrix:
-	la $t6, ($ra)	# t6 - tmp na ra
+	la $t6, ($ra)			# t6 - tmp na ra
 
-	#ilosc wierzy i kolumn wrzucana na stos przed danymi danej macierzy
   	print(howManyRowMsg)
   	jal _readIntNumber  	
-	move $t2, $v0	#t2 - ilosc wierszy
+	move $t2, $v0			#t2 - ilosc wierszy
+	ble $t2, 0, _wrongDecision	#kontrola danych
     	
     	print(howManyColumnsMsg)
     	jal _readIntNumber
-    	move $t3, $v0	#t3 - ilosc kolumn
+    	move $t3, $v0			#t3 - ilosc kolumn
+    	ble $t3, 0, _wrongDecision	#kontrola danych
     	
-    	li $t4, 0	#t4 -iterator wierszy
-    	li $t5, 0	#t5 -iterator kolumn
+    	li $t4, 0			#t4 -iterator wierszy
+    	li $t5, 0			#t5 -iterator kolumn
     	for_writeRows:
     		li $t5, 0
     		
@@ -206,6 +229,7 @@ _writeMatrix:
     	add $sp, $sp, -4
     	sw $t3, ($sp)
     	
+add $s0, $s0, 1    #inc ilosc matrixow	
 la $ra, ($t6)    			
 jr $ra
 
@@ -265,70 +289,114 @@ _mulByScalar:
 	jr $ra
 
 _addMatrixes:
-	#test
-	add $sp, $sp, -4
-	li $t0, 4
-	sw $t0, ($sp)
-	l.s $f3, ($sp)
-	add $sp, $sp, 4
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s1, $v0		#$s1 - numer macierzy 1
+	
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s2, $v0		#s2 - numer macierzy 2
+	
+	move $t0,$s1
+	jal _moveStackPointerUp
+	lw $s5, ($sp)		#s5 - ilosc kolumn
+	lw $s6, 4($sp)		#s6 - ilosc wierszy
 
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $t0, $v0		#$t0 - numer macierzy
-	jal _moveStackPointerUp
-	lw $s1, 8($sp)
-	l.s  $f1, 8($sp)		#f1- poczatek matrixa 1
 	jal _moveStackPointerDown
 	
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $t0, $v0		
-	jal _moveStackPointerUp
-	
-	lw $s2, 8($sp)
-	l.s  $f2, 8($sp)		#f2 - poczatek matrixa 2
-	jal _moveStackPointerDown
-	
-	lw $t5, ($sp)		#t5 - ilosc kolumn
-	#move $a0, $t5
-	#jal _printIntNumber
-	#println()
-	lw $t6, 4($sp)		#t6 - ilosc wierszy
-	#move $a0, $t6
-	#jal _printIntNumber
-	
-	
-	li $t3, 0		#t3 - iterator wierszy, t4 - iterator kolumn, 
-	li $t4, 0
+	li $s3, 0		#s3 - iterator wierszy, s4 - iterator kolumn, 
+	li $s4, 0
+	mul $t8, $s5, $s6
+	mul $t8, $t8, 4
+	add $t8, $t8, 4		#t8 -tmp 	
 	for_addRows:
 		println()
-		li $t4, 0
+		li $s4, 0
 		for_addColumns:	
 			#mtc1 $s1, $f1	#mtc1
 			#mtc1 $s2, $f2	#mtc1
-			l.s $f1
-			l.s $f2, ($sp)
+			move $t0, $s1
+			jal _moveStackPointerUp
+			add $sp, $sp, $t8
+			l.s $f12, ($sp)
+			sub $sp, $sp, $t8
+			jal _moveStackPointerDown
 			
-			add.s $f12, $f1, $f2
+			move $t0, $s2
+			jal _moveStackPointerUp
+			add $sp, $sp, $t8
+			l.s $f1, ($sp)			#f1 -tmp
+			add.s $f12, $f12, $f1
+			sub $sp, $sp, $t8
+			jal _moveStackPointerDown
+			
 			print(leftBracketMsg)
 			jal _printFloatNumber
 			print(rightBracketMsg)
 		
-			#add $s1, $s1, 4
-			#add $s2, $s2, 4
-			
-			add.s $f1, $f1, $f3
-			add.s $f2, $f2, $f3
-			
-			add $t4, $t4, 1
-			blt $t4,$t5, for_addColumns
+			add $t8, $t8, -4
+			add $s4, $s4, 1
+			blt $s4,$s5, for_addColumns
 		
-		add $t3, $t3, 1
-		blt $t3,$t6,for_addRows
+		add $s3, $s3, 1
+		blt $s3,$s6,for_addRows
 												
-	j _endProcess
+	j _closeProgramDecision
 	
+_subMatrixes:
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s1, $v0		#$s1 - numer macierzy 1
 	
+	print(matrixChooseMsg)
+	jal _readIntNumber
+	move $s2, $v0		#s2 - numer macierzy 2
+	
+	move $t0,$s1
+	jal _moveStackPointerUp
+	lw $s5, ($sp)		#s5 - ilosc kolumn
+	lw $s6, 4($sp)		#s6 - ilosc wierszy
+
+	jal _moveStackPointerDown
+	
+	li $s3, 0		#s3 - iterator wierszy, s4 - iterator kolumn, 
+	li $s4, 0
+	mul $t8, $s5, $s6
+	mul $t8, $t8, 4
+	add $t8, $t8, 4		#t8 -tmp 	
+	for_subRows:
+		println()
+		li $s4, 0
+		for_subColumns:	
+			#mtc1 $s1, $f1	#mtc1
+			#mtc1 $s2, $f2	#mtc1
+			move $t0, $s1
+			jal _moveStackPointerUp
+			add $sp, $sp, $t8
+			l.s $f12, ($sp)
+			sub $sp, $sp, $t8
+			jal _moveStackPointerDown
+			
+			move $t0, $s2
+			jal _moveStackPointerUp
+			add $sp, $sp, $t8
+			l.s $f1, ($sp)			#f1 -tmp
+			sub.s $f12, $f12, $f1
+			sub $sp, $sp, $t8
+			jal _moveStackPointerDown
+			
+			print(leftBracketMsg)
+			jal _printFloatNumber
+			print(rightBracketMsg)
+		
+			add $t8, $t8, -4
+			add $s4, $s4, 1
+			blt $s4,$s5, for_subColumns
+		
+		add $s3, $s3, 1
+		blt $s3,$s6,for_subRows
+												
+	j _closeProgramDecision	
 ##################################################################################						
  #Wczytana liczba do f0
  _readFloatNumber:
@@ -361,6 +429,10 @@ _closeProgramDecision:
 	jal  _readIntNumber
 	beq  $v0, 0, _mainToRepete
 	j _endProcess
+
+_wrongDecision:
+	print(wrongDecisionMsg)
+	j _closeProgramDecision
 
 _endProcess:
    li $v0,10
