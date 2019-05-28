@@ -54,7 +54,6 @@ _main:
 endMain:
 #################################################################################################################
 _readMatrixesFromStack:
-
 	bnez $s0, atLeastOneMatrix
 	
 	noOneMatrix:
@@ -234,19 +233,33 @@ la $ra, ($t6)
 jr $ra
 
 _scalingMatrix:
-	print(matrixChooseMsg)
-	jal _readIntNumber
-	move $t0, $v0		#$t0 - numer macierzy
+	bnez $s0, atLeastOneMatrixScal
 	
-	print(scalarMsg)
-	jal _readFloatNumber
-	
-	jal _moveStackPointerUp
-	jal _mulByScalar
-	jal _moveStackPointerDown
-
+	noOneMatrixScal:
+		print(noOneMatrixMsg)
 	j _closeProgramDecision
-
+	
+	atLeastOneMatrixScal:
+		li $t0, 0
+		beq $s0, 1, oneMatrixScal
+		
+		moreMatrixScal:
+			print(matrixChooseMsg)
+			jal _readIntNumber
+			move $t0, $v0			#$t0 - numer macierzy
+			
+			bltz $t0, incorectNumberOfMatrix	#kontrola ujemnych
+			bge $t0, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+			
+		oneMatrixScal:
+			print(scalarMsg)
+			jal _readFloatNumber
+		
+			jal _moveStackPointerUp
+			jal _mulByScalar
+			jal _moveStackPointerDown
+	j _closeProgramDecision
+	
 #Uzywa f0
 _mulByScalar:
 	la $t6, ($ra)	#t6 - tmp na ra
