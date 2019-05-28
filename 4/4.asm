@@ -390,6 +390,12 @@ _subMatrixes:
 		bltz $s1, incorectNumberOfMatrix	#kontrola ujemnych
 		bge $s1, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
 	
+		move $t0,$s1				#TMP do kontroli wielkosci macierzy
+		jal _moveStackPointerUp
+		lw $s3, ($sp)					
+		lw $s4, 4($sp)						
+		jal _moveStackPointerDown	
+	
 	print(matrixChooseMsg)
 	jal _readIntNumber
 	move $s2, $v0					#s2 - numer macierzy 2
@@ -397,12 +403,14 @@ _subMatrixes:
 		bltz $s2, incorectNumberOfMatrix	#kontrola ujemnych
 		bge $s2, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
 	
-	move $t0,$s1
+	move $t0,$s2
 	jal _moveStackPointerUp
 	lw $s5, ($sp)					#s5 - ilosc kolumn
 	lw $s6, 4($sp)					#s6 - ilosc wierszy
-
 	jal _moveStackPointerDown
+	
+		bne $s3, $s5, incorectSize		#kontrola wielkosci macierzy
+		bne $s4, $s6, incorectSize		#kontrola wielkosci macierzy
 	
 	li $s3, 0					#s3 - iterator wierszy, s4 - iterator kolumn, 
 	li $s4, 0
