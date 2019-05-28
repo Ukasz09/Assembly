@@ -501,3 +501,43 @@ _wrongDecision:
 _endProcess:
    li $v0,10
    syscall
+   
+.kdata 
+ 
+  arithmeticOverflowMsg:	.ascii "==== Arithmetic Overflow ===="
+  unhandledExceptionMsg: 	.ascii "==== Unhandled Exception ===="
+  syscallExceptionMsg:		.ascii "==== SyscallException ====="
+  
+.ktext 0x80000180
+
+mfc0 $k0, $13
+andi $k1, $k0, 0x00007c
+srl $k1, $k1, 2
+
+beq $k1, 12, _arithmeticOverflow
+beq $k1, 8, _syscallException
+
+_unhandledException:
+	li $v0, 4
+	la $a0, unhandledExceptionMsg
+	syscall
+	
+	li $v0, 10
+	syscall 
+
+_arithmeticOverflow:
+	li $v0, 4
+	la $a0, arithmeticOverflowMsg
+	syscall
+
+	li $v0, 10
+	syscall   
+
+_syscallException:
+	li $v0, 4
+	la $a0, syscallExceptionMsg
+	syscall
+
+	li $v0, 10
+	syscall   
+  
