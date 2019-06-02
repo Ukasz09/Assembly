@@ -1,6 +1,6 @@
 .data    
     opertaionChooseMsg: 	.asciiz "\n\nPodaj wybrana operacje: "
-    menuMsg:			.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy"
+    menuMsg:			.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy \n6) Transpozycja macierzy"
     howManyMatrixMsg:		.asciiz "\nPodaj ilosc macierzy do dodania: "
     wrongDecisionMsg:		.asciiz "\nPodano bledne dane"
     closeDecisionMsg:		.asciiz "\nCzy chcesz zakonczyc program (0-nie): "
@@ -42,6 +42,7 @@ _main:
 		li $t2, 3
 		li $t3, 4
 		li $t4, 5
+		li $t5, 6
 	
 		print(menuMsg)
 		print(opertaionChooseMsg)
@@ -52,6 +53,7 @@ _main:
 		beq $v0, $t2, _addMatrixes
 		beq $v0, $t3, _subMatrixes
 		beq $v0, $t4, _scalingMatrix
+		beq $v0, $t5, _transposeMatrix
 		j _wrongDecision
 		
 #################################################################################################################
@@ -459,7 +461,79 @@ _subMatrixes:
 		blt $s3,$s6,for_subRows
 												
 	j _closeProgramDecision	
+###########################
+_transposeMatrix:
+	bnez $s0, atLeastOneMatrixTrans
 	
+	noOneMatrixTrans:
+		print(noOneMatrixMsg)
+	j _closeProgramDecision
+	
+	atLeastOneMatrixTrans:
+		li $t0, 0
+		beq $s0, 1, oneMatrixTrans
+		
+		moreMatrixTrans:
+			print(matrixChooseMsg)
+			jal _readIntNumber
+			move $t0, $v0			#$t0 - numer macierzy
+			
+			bltz $t0, incorectNumberOfMatrix	#kontrola ujemnych
+			bge $t0, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+			
+		oneMatrixTrans:
+			jal _moveStackPointerUp
+			jal transpose
+			jal _moveStackPointerDown
+	j _closeProgramDecision
+	
+#Uzywa f0
+transpose:
+	la $t6, ($ra)	#t6 - tmp na ra
+
+	lw $t0, ($sp) 	#t0 - ilosc kolumn
+	move $s6, $t0	#s6 - ilosc kolumn
+	add $sp, $sp, 4
+	
+	lw $t1, ($sp) 	#t1- ilosc wierszy
+		
+	mul $t3, $t0, $t1
+	mul $t3, $t3, 4 	#t3 - ilosc bitow na stosie do przeskoczenia
+	add $sp, $sp, $t3	#przesuniecie wskaznika stosu na poczatek matrixa
+
+	li $t4, 0 	#t4 - iterator wierszy
+	li $t5, 0 	#t5 - iterator kolumn
+	for_transposeColumns:
+    		li $t4, 0
+    		println()
+    		
+    		for_transposeRows:
+    			print(leftBracketMsg)
+    			mul $s7, $t4, $s6								#s7 - ilosc bajtow do przesunieca
+    			add $s7, $s7, $t5
+    			mul $s7, $s7, 4
+    			
+    			sub $sp, $sp, $s7								#przesuniecie na odpowiednia komorke
+    			
+    			l.s $f12, ($sp)
+    			jal _printFloatNumber
+    			print(rightBracketMsg)
+    			
+    			add $sp, $sp, $s7								#powrot na poczatek
+    	
+    			add $t4, $t4, 1
+    			blt $t4, $t1, for_transposeRows
+    		
+    		add $t5, $t5, 1
+    	blt $t5,$t0,for_transposeColumns
+	
+	println()
+	sub $sp, $sp, $t3 #powrot na ostatnio dodany element
+	sub $sp, $sp, 4
+	
+	la $ra, ($t6)
+	jr $ra
+						
 ##################################################################################
 						
  #Wczytana liczba do f0
@@ -501,7 +575,8 @@ _wrongDecision:
 _endProcess:
    li $v0,10
    syscall
-   
+
+###############################################################################      
 .kdata 
  
   arithmeticOverflowMsg:	.ascii "==== Arithmetic Overflow ===="
