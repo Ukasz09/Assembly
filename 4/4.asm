@@ -1,6 +1,6 @@
 .data    
     opertaionChooseMsg: 	.asciiz "\n\nPodaj wybrana operacje: "
-    menuMsg:			.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy \n6) Transpozycja macierzy"
+    menuMsg:			.asciiz "\n\n1) Wprowadzanie macierzy, \n2) Drukowanie macierzy, \n3) Dodawanie macierzy, \n4) Odejmowanie macierzy, \n5) Skalowanie macierzy \n6) Transpozycja macierzy \n7) Mnozenie macierzy"
     howManyMatrixMsg:		.asciiz "\nPodaj ilosc macierzy do dodania: "
     wrongDecisionMsg:		.asciiz "\nPodano bledne dane"
     closeDecisionMsg:		.asciiz "\nCzy chcesz zakonczyc program (0-nie): "
@@ -18,6 +18,10 @@
     notEnoughMatrixMsg:		.asciiz "\nNie mozna wykonac operacji. Potrzeba minimum 2 maicerzy"
     incorectSizeMatrixMsg: 	.asciiz "\nNie mozna wykonac. Macierze maja rozne rozmiary"
     maxNumberOfMatrixMsg:	.asciiz "\nNie mozna dodac przekroczona ilosc macierzy do dodania"
+    notCorrectMatrixesSizeMsg: .asciiz "\nNie mozna pomnozyc. Macierze maja rozne rozmiary"
+    notAtLeastTwoMatrixMsg:	.asciiz "\nNie ma zapisanych przynajmniej dwoch macierzy"
+    
+    zero: .double 0.0 
 .text
 .globl _main
 
@@ -43,6 +47,7 @@ _main:
 		li $t3, 4
 		li $t4, 5
 		li $t5, 6
+		li $t6, 7
 	
 		print(menuMsg)
 		print(opertaionChooseMsg)
@@ -54,6 +59,7 @@ _main:
 		beq $v0, $t3, _subMatrixes
 		beq $v0, $t4, _scalingMatrix
 		beq $v0, $t5, _transposeMatrix
+		beq $v0, $t6, _multiplyMatrixes
 		j _wrongDecision
 		
 #################################################################################################################
@@ -533,7 +539,133 @@ transpose:
 	
 	la $ra, ($t6)
 	jr $ra
-						
+#############################################################33
+		
+# s4 -nr pierwszej, s5 - nr drugiej 		
+_multiplyMatrixes:
+	bge $s0, 2, atLeastTwoMatrixMul
+	
+	lessThanTwoMatrixMul:
+		print(notAtLeastTwoMatrixMsg)
+	j _closeProgramDecision
+
+	atLeastTwoMatrixMul:
+		li $s4, 0
+		li $s5, 1
+		beq $s0, 2, mulMatrix
+		
+		moreMatrixMul:
+			print(matrixChooseMsg)
+			jal _readIntNumber
+			move $s4, $v0
+			
+			bltz $s4, incorectNumberOfMatrix	#kontrola ujemnych
+			bge $s4, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+	
+			print(matrixChooseMsg)
+			jal _readIntNumber
+			move $s5, $v0
+			
+			bltz $s5, incorectNumberOfMatrix	#kontrola ujemnych
+			bge $s5, $s0, incorectNumberOfMatrix	#kontrola numeru wiekszego niz dostepny
+			
+			
+
+mulMatrix:
+	move $t0, $s4
+	jal _moveStackPointerUp
+	lw $s6, ($sp) 	#s6 - ilosc kolumn1
+	add $sp, $sp, 4
+	lw $s2, ($sp) 	#s2- ilosc wierszy1
+	sub $sp, $sp, 4
+	jal _moveStackPointerDown
+	
+	move $t0, $s5
+	jal _moveStackPointerUp
+	lw $s3, ($sp) 	#s3 - ilosc kolumn2		
+	add $sp, $sp, 4
+	lw $t9, ($sp) 	#t9- ilosc wierszy2	
+	sub $sp, $sp, 4
+	jal _moveStackPointerDown
+	
+	bne $s6, $t9, notCorrectSize
+	
+	
+	li $s7, 0 #iterator row1
+	li $t8, 0 #iterator columns2
+	li $s1, 0 #iterator columns1
+	forRows1:
+		li $t8, 0
+		forColumns2:
+		    li $s1,0
+		    lwc1 $f26, zero
+			forColumns1:
+				la $t0, ($s4)
+				jal _moveStackPointerUp
+				add $sp, $sp, 4
+				
+				#przesuniecie na poczatek matrixa
+				mul $t3, $s6, $s2
+				mul $t3, $t3, 4 	#t3 - ilosc bitow na stosie do przeskoczenia by byc na gorze 
+				add $sp, $sp, $t3	
+			
+				#przesuniecie wskaznika matrixa1 na odpowiednia komorke
+				mul $t4, $s7, $s6
+				add $t4, $t4, $s1
+				mul $t4, $t4, 4
+				sub $sp, $sp, $t4
+				
+				l.s $f30, ($sp)	# f30 - matrix 1
+				
+				add $sp, $sp, $t4
+				sub $sp, $sp, $t3
+				sub $sp, $sp, 4
+				jal _moveStackPointerDown
+				
+				####
+				la $t0, ($s5)
+				jal _moveStackPointerUp
+				add $sp, $sp, 4
+		
+				mul $t3, $t9, $s3
+				mul $t3, $t3, 4 	#t3 - ilosc bitow na stosie do przeskoczenia by byc na gorze 
+				add $sp, $sp, $t3	
+			
+				#przesuniecie wskaznika matrixa1 na odpowiednia komorke
+				mul $t4, $s1, $s3
+				add $t4, $t4, $t8
+				mul $t4, $t4, 4
+				sub $sp, $sp, $t4
+				
+				l.s $f28, ($sp)	# f28 - matrix2
+				
+				add $sp, $sp, $t4
+				sub $sp, $sp, $t3
+				sub $sp, $sp, 4
+				
+				jal _moveStackPointerDown
+				
+				mul.s $f24, $f30, $f28
+				add.s $f26, $f26, $f24	#f26 - wynik mnozenia
+				
+			add $s1, $s1, 1	
+			blt $s1, $s6, forColumns1
+			
+			print(leftBracketMsg)
+			mov.s $f12, $f26
+			jal _printFloatNumber
+    		print(rightBracketMsg)
+			
+			add $t8, $t8, 1	
+			blt $t8, $s3, forColumns2
+	println()
+	add $s7, $s7, 1		
+	blt $s7, $s2, forRows1			
+	j _closeProgramDecision				
+	
+	notCorrectSize:
+		print(notCorrectMatrixesSizeMsg)
+		j _closeProgramDecision																																							
 ##################################################################################
 						
  #Wczytana liczba do f0
@@ -579,11 +711,17 @@ _endProcess:
 ###############################################################################      
 .kdata 
  
-  arithmeticOverflowMsg:	.ascii "==== Arithmetic Overflow ===="
-  unhandledExceptionMsg: 	.ascii "==== Unhandled Exception ===="
-  syscallExceptionMsg:		.ascii "==== SyscallException ====="
+  arithmeticOverflowMsg:	.asciiz "==== Arithmetic Overflow ===="
+  unhandledExceptionMsg: 	.asciiz "==== Unhandled Exception ===="
+  syscallExceptionMsg:		.asciiz "==== Syscall Exception ====="
+  floatingPointExceptionMsg:.asciiz "==== FloatingPoint Exception ====="
   
 .ktext 0x80000180
+.macro print(%comunicate)    
+    li $v0, 4       		
+    la $a0, %comunicate 	
+    syscall         		    
+.end_macro
 
 mfc0 $k0, $13
 andi $k1, $k0, 0x00007c
@@ -591,28 +729,25 @@ srl $k1, $k1, 2
 
 beq $k1, 12, _arithmeticOverflow
 beq $k1, 8, _syscallException
+beq $k1, 14, _floatingPointException
 
 _unhandledException:
-	li $v0, 4
-	la $a0, unhandledExceptionMsg
-	syscall
-	
-	li $v0, 10
-	syscall 
+	print(unhandledExceptionMsg)
+	j _endProcessKDATA
 
 _arithmeticOverflow:
-	li $v0, 4
-	la $a0, arithmeticOverflowMsg
-	syscall
-
-	li $v0, 10
-	syscall   
+	print(arithmeticOverflowMsg)
+	j _endProcessKDATA  
 
 _syscallException:
-	li $v0, 4
-	la $a0, syscallExceptionMsg
-	syscall
+	print(syscallExceptionMsg)
+	j _endProcessKDATA	
 
+_floatingPointException:
+	print(floatingPointExceptionMsg)
+	j _endProcessKDATA
+
+_endProcessKDATA:
 	li $v0, 10
-	syscall   
-  
+	syscall	
+	 
